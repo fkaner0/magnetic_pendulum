@@ -3,13 +3,13 @@ from magnetic_pendulum import MagneticPendulum, run_simulation, plot_trajectory
 import numpy as np
 
 # Define the magnets in a square centered at the origin
-R = 0.6  # Square radius
+R = 0.5  # Square radius
 magnets = [(R, R), (-R, R), (-R, -R), (R, -R)]
 
 b = 0.05  # Damping coefficient
-h = 0.5  # Height above the x-y plane
+h = 0.125  # Height above the x-y plane
 
-initial_pos = [0.95, -0.6]  # Random fixed initial position
+initial_pos = [0.9, -0.6]  # Random fixed initial position
 initial_vel = (0, 0)  # Initial velocity
 print(f"Initial position: {initial_pos}")
 

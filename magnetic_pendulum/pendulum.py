@@ -7,7 +7,7 @@ class MagneticPendulum:
         self.h = h  # Distance of bob above x-y plane
         self.pos = np.array(initial_pos, dtype=float)  # Initial position (x, y)
         self.vel = np.array(initial_vel, dtype=float)  # Initial velocity (dx, dy)
-        self.strength = 10
+        self.strength = 5
 
 
     def _distance(self, magnet_pos):
