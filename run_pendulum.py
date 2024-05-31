@@ -24,20 +24,20 @@ mag_theta =atan(R/(L+h))
 magnets_polar = [Magnet(PolarCoordinates([(L+h), mag_theta, (pi/2) * i]), strength=1) for i in range(4)]
 
 
-initial_pos_polar = PolarCoordinates([L, 0.2, 0.4])
+initial_pos_polar = PolarCoordinates([L, 0.01, 0.4])
 initial_pos = initial_pos_polar.to_cartesian().coords[:-1]
 initial_vel_polar = PolarCoordinates([0,0,0])
 
 # initial_pos = [0.9, -0.6]  # Random fixed initial position
 initial_vel = (0, 0)  # Initial velocity
-print(f"Initial position: {initial_pos_polar.to_cartesian()}")
+print(f"Initial position: {initial_pos_polar.coords}")
 
 # Create the pendulum
 pendulum = MagneticPendulum(magnets, b, h, initial_pos, initial_vel)
 pendulum_polar = MagneticPendulum_Polar(magnets_polar, b, h, initial_pos_polar, initial_vel_polar)
 
-dt = 0.01  # Time step
-max_steps = 10000  # Maximum number of steps
+dt = 0.001 # Time step
+max_steps = None  # Maximum number of steps
 # trajectory = run_simulation(pendulum, dt, max_steps)
 trajectory_polar = run_simulation_Polar(pendulum_polar, dt, max_steps)
 
@@ -47,7 +47,7 @@ trajectory_polar = run_simulation_Polar(pendulum_polar, dt, max_steps)
 # plot_Polar.plot_trajectory(trajectory_polar, magnets_polar)
 # plot_Polar.plot_trajectory_rotate(trajectory_polar, magnets_polar)
 # plot_Polar.plot_trajectory_animation(trajectory_polar, magnets_polar, dt)
-
+print(trajectory_polar[-1])
 
 plot_Polar.plot_trajectory(trajectory_polar, magnets_polar)
 plot_Polar.plot_trajectory_rotate(trajectory_polar, magnets_polar)

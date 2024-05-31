@@ -15,9 +15,11 @@ def plot_trajectory(trajectory, magnets):
     # Plot the magnet positions
     ax.scatter(*zip(*[m.pos.to_cartesian().coords.astype(np.double) for m in magnets]), color='red', label='Magnets', zorder=2)  
 
-    # Plot the final position of the pendulum
+    # Plot the final & initial positions of the pendulum
     final_position = trajectory[-1]
+    initial_position = trajectory[0]
     ax.scatter(*final_position, color='cyan', label='Final Position', s=10, zorder=3)
+    ax.scatter(*initial_position, color='black', label='Initial Position', s=10, zorder=3)
 
     ax.legend()
     ax.grid(True)
@@ -35,9 +37,11 @@ def plot_trajectory_rotate(trajectory, magnets):
     # Plot the magnet positions
     ax.scatter(*zip(*[m.pos.to_cartesian().coords.astype(np.double) for m in magnets]), color='red', label='Magnets', zorder=2)  
 
-    # Plot the final position of the pendulum
+    # Plot the final & initial positions of the pendulum
     final_position = trajectory[-1]
+    initial_position = trajectory[0]
     ax.scatter(*final_position, color='cyan', label='Final Position', s=10, zorder=3)
+    ax.scatter(*initial_position, color='black', label='Initial Position', s=10, zorder=3)
 
     ax.legend()
     ax.grid(True)
