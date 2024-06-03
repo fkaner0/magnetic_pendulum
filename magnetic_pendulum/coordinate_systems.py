@@ -30,7 +30,7 @@ class CurvilinearCoordinateSystem:
             + cartesian_position_formula[1]*C.j
             + cartesian_position_formula[2]*C.k
         )
-        self.position_vector = position_vector.subs(zip(self.U, self.old_symbols))
+        self.position_vector = position_vector.subs(zip(self.old_symbols, self.U))
 
     @cached_property
     def unit_vectors(self):
@@ -51,14 +51,13 @@ class CurvilinearCoordinateSystem:
         gives acceleration of each of `self.U`, given some force
         force: 3-tuple giving the scalar (???) force in the direction of each unit_vector
         """
-        # F = {u: sp.symbols(f'F_{u.name}') for u in self.U}
-        U_acceleration = {}
+        U_acceleration = []
         for i, u in enumerate(self.U):
             # get acceleration in terms of u
             u_a_solns = sp.solve(sp.Eq(self.acceleration_vector[i], force[i]), sp.diff(u, self.t, 2))
             if len(u_a_solns) != 1:
                 raise ValueError(f'could not find acceleration in direction of {u} in terms of {sp.diff(u, self.t, 2)}.\nreturned solns: {u_a_solns}')
-            U_acceleration[u] = u_a_solns[0]
+            U_acceleration.append(sp.simplify(u_a_solns[0]))
 
         return U_acceleration
 
@@ -67,42 +66,42 @@ def _get_cartesian_system():
     symbols = (x, y, z) = sp.symbols('r θ φ')
     position_vector = (x, y, z)
 
-    return partial(CurvilinearCoordinateSystem(
+    return partial(CurvilinearCoordinateSystem,
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Cartesian'
-    ))
+    )
 
 def _get_cylindrical_system():
     symbols = (r, θ, z) = sp.symbols('r θ φ')
     position_vector = ((r*cos(θ)), (r*sin(θ)), (z))
 
-    return partial(CurvilinearCoordinateSystem(
+    return partial(CurvilinearCoordinateSystem,
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Cylindrical'
-    ))
+    )
 
 def _get_spherical_system():
     symbols = (r, θ, φ) = sp.symbols('r θ φ')
     position_vector = ((r*sin(θ)*cos(φ)), (r*sin(θ)*sin(φ)), (r*cos(θ)))
 
-    return partial(CurvilinearCoordinateSystem(
+    return partial(CurvilinearCoordinateSystem,
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Spherical'
-    ))
+    )
 
 def _get_inverted_spherical_system():
     """standard spherical, but θ corresponds to *negative* z-axis"""
     symbols = (r, θ, φ) = sp.symbols('r θ φ')
     position_vector = ((r*sin(θ)*cos(φ)), (r*sin(θ)*sin(φ)), (-r*cos(θ)))
 
-    return partial(CurvilinearCoordinateSystem(
+    return partial(CurvilinearCoordinateSystem,
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='InvSpherical'
-    ))
+    )
 
 
 def get_predefined_system(name):
