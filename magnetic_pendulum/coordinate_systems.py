@@ -31,5 +31,17 @@ class Polar(CoordinateSystem):
     def _to_cartesian(self):
         pass
 
+############## Thinking: how do I change to include stuff like position vectors
 
+# class Polar(CoordinateSystem):
+
+from sympy import symbols
+from sympy.vector import CoordSys3D, express
+from sympy import sin, cos, Derivative
+
+C = CoordSys3D('C')  # standard Cartesian system
+r, θ, ϕ = symbols('r θ ϕ')
+
+r_ = (r*sin(θ)*cos(φ))*C.i + (r*sin(θ)*sin(φ))*C.j + (r*cos(θ))*C.k
+print(Derivative(r_, r))
 
