@@ -1,5 +1,5 @@
 
-from magnetic_pendulum import MagneticPendulum, run_simulation, plot_trajectory
+from magnetic_pendulum_simple import MagneticPendulum, run_simulation, plot_trajectory
 import numpy as np
 
 # Define the magnets in a square centered at the origin
