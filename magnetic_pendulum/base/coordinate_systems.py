@@ -83,6 +83,13 @@ class CurvilinearCoordinateSystem:
 
         return np.vectorize(rearrange_acceleration_scalar)(self.acceleration_vector, RHS, self.U)
 
+    def get_distance(self, to_v, from_v=None):
+        if from_v:
+            from_pos = self.position_vector.subs(zip(self.U, from_v))
+        else:
+            from_pos = self.position_vector
+        to_pos = self.position_vector.subs(zip(self.U, to_v))
+        return sp.simplify((to_pos - from_pos).magnitude())
 
 
 
