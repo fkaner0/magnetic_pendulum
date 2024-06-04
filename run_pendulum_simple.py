@@ -3,10 +3,10 @@ from magnetic_pendulum_simple import MagneticPendulum, run_simulation, plot_traj
 import numpy as np
 
 # Define the magnets in a square centered at the origin
-R = 0.5  # Square radius
+R = 0.4  # Square radius
 magnets = [(R, R), (-R, R), (-R, -R), (R, -R)]
 
-b = 0.05  # Damping coefficient
+b = 0.001  # Damping coefficient
 h = 0.5  # Height above the x-y plane
 
 initial_pos = [0.9, -0.6]  # Random fixed initial position
