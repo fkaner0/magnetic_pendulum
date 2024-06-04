@@ -1,12 +1,15 @@
 from typing import Tuple
 from coordinate_systems import CurvilinearCoordinateSystem
-import sympy as sp\
+import sympy as sp
+# from numpy import ndarray
+import numpy as np
 
 class Force():
-    def __init__(self, vector: Tuple[sp.Expr], coordsystem: CurvilinearCoordinateSystem) -> None:
+    def __init__(self, vector: np.ndarray[sp.Expr], coordsystem: CurvilinearCoordinateSystem) -> None:
         """
-        vector should be 3-tuple in terms of coordsystem's .unit_vectors and .U (scalars)
+        vector: should be 3-tuple in terms of coordsystem's .unit_vectors and .U (scalars)
         """
+        ### probably adds checks in for safety - not the focus right now
         self.F = vector
         self.coordsystem = coordsystem
 
@@ -14,16 +17,12 @@ class Force():
 class Energy():
     def __init__(self, scalar: sp.Expr, coordsys: CurvilinearCoordinateSystem) -> None:
         """
-        should be scalar value in terms of coordsystem's .U (scalars)
+        scalar: should be a scalar expression in terms of coordsystem's .U (scalars)
         """
         self.E = scalar
         self.coordsys = coordsys
 
     def to_force(self):
-
-        ### haven't really thought through this yet
-        vector = []
-        for u in self.coordsys.U:
-            vector.append(sp.diff(self.E, u))
-
+        # grad(E) w.r.t the basis U
+        vector = -np.vectorize(sp.diff)(self.E, self.coordsys.U)/self.coordsys.lame_coefficients
         return Force(vector, self.coordsys)
