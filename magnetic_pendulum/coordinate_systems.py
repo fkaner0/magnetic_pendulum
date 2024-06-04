@@ -1,13 +1,16 @@
 import sympy as sp
 from sympy import sin, cos
 from sympy.vector import CoordSys3D, VectorAdd
+from sympy.physics.vector import dynamicsymbols
 
-from functools import cached_property, partial
-from typing import List, Self  # NB: this only works for py > 3.11
+import numpy as np
+
+from functools import cached_property
+from typing import List
 
 
 class CurvilinearCoordinateSystem:
-    def __init__(self, t: sp.Symbol, symbols: tuple[sp.Symbol],
+    def __init__(self, symbols: tuple[sp.Symbol],
                  cartesian_position_formula: sp.Expr,
                  C: CoordSys3D=CoordSys3D('C'), name: str="") -> None:
         """
@@ -17,15 +20,12 @@ class CurvilinearCoordinateSystem:
         (optional) C: standard cartesian coordinate system we define this in terms of
         """
         self.name = name
-        self.C = CoordSys3D('C')  # standard Cartesian system
-        self.t = t
-        self.old_symbols = symbols
+        self.C = C  # standard Cartesian system
+        self.t = dynamicsymbols._t
+        self.old_symbols = np.array(symbols)
 
-        # make sure our symbols become (undefined) functions of t
-        def func_of_t(*args, **kwargs):
-            return sp.Function(*args, **kwargs)(t)
         # tuple of symbols as functions of t
-        self.U = sp.symbols(' '.join(s.name for s in symbols), cls=func_of_t)
+        self.U = np.array(dynamicsymbols(' '.join(s.name for s in self.old_symbols)))
 
         position_vector: VectorAdd = (
             cartesian_position_formula[0]*C.i
@@ -36,17 +36,19 @@ class CurvilinearCoordinateSystem:
 
     @cached_property
     def unit_vectors(self) -> List[VectorAdd]:
-        return [sp.simplify(sp.diff(self.position_vector, u).normalize()) for u in self.U]
+        get_unit_vector = lambda u: sp.simplify(sp.diff(self.position_vector, u).normalize())
+        return np.vectorize(get_unit_vector)(self.U)
     
-    def in_direction(self, v: VectorAdd, i: int) -> sp.Expr:
+    def resolve_to_unit_vectors(self, v: VectorAdd) -> sp.Expr:
         "get component of vector `v` in direction `self.unit_vectors[i]`"
-        return sp.simplify(v.dot(self.unit_vectors[i]))
+        wrt_unit = lambda unit: sp.simplify(v.dot(unit))
+        return np.vectorize(wrt_unit)(self.unit_vectors)
 
     @cached_property
     def velocity_vector(self) -> List[sp.Derivative]:
         """(similar to acceleration_vector)"""
-        formula = sp.diff(self.position_vector, self.t)
-        return [self.in_direction(formula, i) for i in range(3)]
+        v = sp.diff(self.position_vector, self.t)
+        return self.resolve_to_unit_vectors(v)
         
     @cached_property
     def acceleration_vector(self) -> List[sp.Derivative]:
@@ -54,68 +56,68 @@ class CurvilinearCoordinateSystem:
         list giving acceleration in directions of each **unit_vector**
         (note: this distinction becomes clear in spherical coordinates, for example)
         """
-        formula = sp.diff(self.position_vector, self.t, 2)
-        return [self.in_direction(formula, i) for i in range(3)]
+        a = sp.diff(self.position_vector, self.t, 2)
+        return self.resolve_to_unit_vectors(a)
     
-    def acceleration_components(self, force) -> sp.Expr:
+    def acceleration_components(self, RHS) -> sp.Expr:
         """
-        gives acceleration of each of `self.U`, given some force
-        force: 3-tuple giving the scalar (???) force in the direction of each unit_vector
-        """
-        U_acceleration = []
-        for i, u in enumerate(self.U):
-            # get acceleration in terms of u
-            u_a_solns = sp.solve(sp.Eq(self.acceleration_vector[i], force[i]), sp.diff(u, self.t, 2))
+        gives acceleration of each of `self.U`, given some RHS (should be force/mass)
+        RHS: 3-tuple giving the scalar (???) force/mass in the direction of each unit_vector
+        """  
+        def rearrange_acceleration_scalar(a, rhs, u):
+            u_a_solns = sp.solve(sp.Eq(a, rhs), sp.diff(u, self.t, 2))
             if len(u_a_solns) != 1:
                 raise ValueError(f'could not find acceleration in direction of {u} in terms of {sp.diff(u, self.t, 2)}.\nreturned solns: {u_a_solns}')
-            U_acceleration.append(sp.simplify(u_a_solns[0]))
+            return sp.simplify(u_a_solns[0])
 
-        return U_acceleration
+        return np.vectorize(rearrange_acceleration_scalar)(self.acceleration_vector, RHS, self.U)
 
 
-def _get_cartesian_system() -> partial[CurvilinearCoordinateSystem]:
+
+
+def _get_cartesian_system() -> CurvilinearCoordinateSystem:
     symbols = (x, y, z) = sp.symbols('r θ φ')
     position_vector = (x, y, z)
 
-    return partial(CurvilinearCoordinateSystem,
+    return CurvilinearCoordinateSystem(
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Cartesian'
     )
 
-def _get_cylindrical_system() -> partial[CurvilinearCoordinateSystem]:
+def _get_cylindrical_system() -> CurvilinearCoordinateSystem:
     symbols = (r, θ, z) = sp.symbols('r θ φ')
     position_vector = ((r*cos(θ)), (r*sin(θ)), (z))
 
-    return partial(CurvilinearCoordinateSystem,
+    return CurvilinearCoordinateSystem(
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Cylindrical'
     )
 
-def _get_spherical_system() -> partial[CurvilinearCoordinateSystem]:
+def _get_spherical_system() -> CurvilinearCoordinateSystem:
     symbols = (r, θ, φ) = sp.symbols('r θ φ')
     position_vector = ((r*sin(θ)*cos(φ)), (r*sin(θ)*sin(φ)), (r*cos(θ)))
 
-    return partial(CurvilinearCoordinateSystem,
+    return CurvilinearCoordinateSystem(
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='Spherical'
     )
 
-def _get_inverted_spherical_system() -> partial[CurvilinearCoordinateSystem]:
+def _get_inverted_spherical_system() -> CurvilinearCoordinateSystem:
     """standard spherical, but θ corresponds to *negative* z-axis"""
     symbols = (r, θ, φ) = sp.symbols('r θ φ')
     position_vector = ((r*sin(θ)*cos(φ)), (r*sin(θ)*sin(φ)), (-r*cos(θ)))
 
-    return partial(CurvilinearCoordinateSystem,
+    return CurvilinearCoordinateSystem(
         symbols=symbols,
         cartesian_position_formula=position_vector,
         name='InvSpherical'
     )
 
 
-def get_predefined_system(name) -> partial[CurvilinearCoordinateSystem]:
+def get_predefined_system(name) -> CurvilinearCoordinateSystem:
     """[not well implemented, but does the job]
     get a coordinate system from predefined set
     """
