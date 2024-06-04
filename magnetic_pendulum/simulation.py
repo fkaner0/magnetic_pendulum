@@ -1,8 +1,8 @@
 import numpy as np
 
-def run_simulation(pendulum, dt, max_steps):
+def run_simulation(pendulum, dt):
     trajectory = []  # Initialise blank list
-    for _ in range(max_steps):
+    while True:
         pos = pendulum.update(dt)  # Update the pendulum position
         trajectory.append(pos.copy())  # Store the current position
         if np.linalg.norm(pendulum.vel) < 1e-3:
