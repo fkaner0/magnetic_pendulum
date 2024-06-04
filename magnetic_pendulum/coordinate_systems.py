@@ -25,7 +25,9 @@ class CurvilinearCoordinateSystem:
         self.old_symbols = np.array(symbols)
 
         # tuple of symbols as functions of t
-        self.U = np.array(dynamicsymbols(' '.join(s.name for s in self.old_symbols)))
+        self.U = np.array(dynamicsymbols(
+            ' '.join(s.name for s in self.old_symbols), positive=True, real=True
+        ))
 
         position_vector: VectorAdd = (
             cartesian_position_formula[0]*C.i
@@ -35,12 +37,21 @@ class CurvilinearCoordinateSystem:
         self.position_vector = position_vector.subs(zip(self.old_symbols, self.U))
 
     @cached_property
+    def _direction_vectors(self) -> List[VectorAdd]:
+        get_vector = lambda u: sp.simplify(sp.diff(self.position_vector, u))
+        return np.vectorize(get_vector)(self.U)
+
+    @cached_property
+    def lame_coefficients(self) -> List[sp.Expr]:
+        magnitude = lambda v: sp.sqrt(v & v)
+        return np.vectorize(magnitude)(self._direction_vectors)
+
+    @cached_property
     def unit_vectors(self) -> List[VectorAdd]:
-        get_unit_vector = lambda u: sp.simplify(sp.diff(self.position_vector, u).normalize())
-        return np.vectorize(get_unit_vector)(self.U)
+        return np.vectorize(sp.simplify)(self._direction_vectors / self.lame_coefficients)
     
     def resolve_to_unit_vectors(self, v: VectorAdd) -> sp.Expr:
-        "get component of vector `v` in direction `self.unit_vectors[i]`"
+        "get component of vector `v` in direction `self.unit_vectors[i]`"   
         wrt_unit = lambda unit: sp.simplify(v.dot(unit))
         return np.vectorize(wrt_unit)(self.unit_vectors)
 
