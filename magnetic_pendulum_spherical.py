@@ -43,7 +43,7 @@ def dVmag_dtheta_magnet(theta, phi, x_p, y_p, z_p, magnet_pos):
     x_m, y_m, z_m = magnet_pos
     dri_d_theta = (L * np.cos(theta) * np.cos(phi) * (x_p - x_m)
                         + L * np.cos(theta) * np.sin(phi) * (y_p - y_m)
-                        - L * np.sin(theta) * (z_p - z_m)) / r_i
+                        + L * np.sin(theta) * (z_p - z_m)) / r_i
     dV_dtheta_magnet = 4 * k * dri_d_theta / r_i**5
     return dV_dtheta_magnet
 
